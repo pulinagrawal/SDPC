@@ -303,10 +303,14 @@ class whitening(object):
     def __call__(self, img):
 
         img = img.unsqueeze(0)
-        img_f = torch.rfft(img, 2, onesided=False)
+        # img_f = torch.rfft(img, 2, onesided=False)
+        img_f = torch.view_as_real(torch. fft.fft(img, dim=2))
+
         filt = self.f * torch.exp(-(self.f / self.f_0).pow(self.n))
         img_f_ = img_f * filt
-        img = torch.irfft(img_f_, 2, onesided=False)
+        # img = torch.irfft(img_f_, 2, onesided=False)
+        img = torch.fft.irfft(torch.view_as_complex(img_f_), n=img_f_.shape[2], dim=2)
+
 
         return img.squeeze(0)
 
@@ -323,7 +327,6 @@ class mask(object):
 
         dim_x = img_size[0]
         dim_y = img_size[1]
-        dim_x = 100
         x = torch.from_numpy(
             np.linspace(-1, 1, dim_x)).unsqueeze(1).expand(dim_x, dim_y).float().unsqueeze(0)
         mask_x = 1 - x.abs().pow(n)
