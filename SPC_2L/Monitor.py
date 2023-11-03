@@ -17,12 +17,8 @@ class Monitor(object):
         if self.n_row is None:
             self.n_row = [16]*self.Net.nb_layers
         #self.act = [torch.zeros()]*self.Net.nb_layers
-        if torch.cuda.is_available():
-            self.total_activity = [torch.zeros(1,1,1,1).cuda()]*self.Net.nb_layers
-            self.act = [torch.zeros(1,self.Net.layers[i].dico_shape[0],1,1).cuda() for i in range(self.Net.nb_layers)]
-        else :
-            self.total_activity = [torch.zeros(1, 1, 1, 1)] * self.Net.nb_layers
-            self.act = [torch.zeros(1, self.Net.layers[i].dico_shape[0], 1, 1) for i in range(self.Net.nb_layers)]
+        self.total_activity = [torch.zeros(1,1,1,1).to(discover_device())]*self.Net.nb_layers
+        self.act = [torch.zeros(1,self.Net.layers[i].dico_shape[0],1,1).to(discover_device()) for i in range(self.Net.nb_layers)]
        # self.fig = [plt.subplots()] * self.Net.nb_layers
        # self.x_bar = [np.arange(self.Net.layers[i].dico.data.size()[0]) + 1 for i in range(self.Net.nb_layers)]
 
@@ -36,8 +32,8 @@ class Monitor(object):
                 self.all_stride_list.append(self.all_stride_list[-1] * stride * self.Net.layers[i+1].stride)
             if torch.cuda.is_available():
                 self.size_eff = [self.Net.project_dico(i,cpu=False).size() for i in range(self.Net.nb_layers)]
-                self.D_eff = [torch.randn(self.size_eff[i]).cuda() for i in range(self.Net.nb_layers)]
-                self.D_eff_m = [torch.randn(self.size_eff[i]).cuda() for i in range(self.Net.nb_layers)]
+                self.D_eff = [torch.randn(self.size_eff[i]).to(discover_device()) for i in range(self.Net.nb_layers)]
+                self.D_eff_m = [torch.randn(self.size_eff[i]).to(discover_device()) for i in range(self.Net.nb_layers)]
             else:
                 self.size_eff = [self.Net.project_dico(i, cpu=True).size() for i in range(self.Net.nb_layers)]
                 self.D_eff = [torch.randn(self.size_eff[i]) for i in range(self.Net.nb_layers)]

@@ -148,8 +148,7 @@ class Network(object):
             if verbose:
                 print(network_structure)
 
-        if torch.cuda.is_available():
-            self.layers = [self.layers[i].cuda() for i in range(self.nb_layers)]
+        self.layers = [self.layers[i].to(discover_device()) for i in range(self.nb_layers)]
 
     def project_dico(self, j, cpu=False):
         """
@@ -220,8 +219,8 @@ class MaxPool2d(nn.Module):
         self.pool = torch.nn.MaxPool2d(kernel_size, stride=stride, return_indices=True)
         self.unpool = torch.nn.MaxUnpool2d(kernel_size, stride=stride)
         if torch.cuda.is_available():
-            self.pool = self.pool.cuda()
-            self.unpool = self.unpool.cuda()
+            self.pool = self.pool.to(discover_device())
+            self.unpool = self.unpool.to(discover_device())
 
         #self.pool = torch.nn.MaxPool2d(kernel_size, stride=stride, return_indices=True)
         #self.unpool = torch.nn.MaxUnpool2d(kernel_size, stride=stride)
@@ -238,10 +237,10 @@ class MaxPool2d(nn.Module):
         c_size = x.size()[0]
         d_size = layer.dico.data.size()[0]
 
-        _, idx = self.pool(torch.randn(c_size, d_size, w, h).cuda())
+        _, idx = self.pool(torch.randn(c_size, d_size, w, h).to(discover_device()))
 
         #if torch.cuda.is_available:
-        #    _, idx = self.pool(torch.randn(c_size, d_size, w, h).cuda())
+        #    _, idx = self.pool(torch.randn(c_size, d_size, w, h).to(discover_device()))
         #else:
         #    _, idx = self.pool(torch.randn(c_size, d_size, w, h))
 
@@ -259,8 +258,8 @@ class AvgPool2d(nn.Module):
         self.pool = torch.nn.AvgPool2d(kernel_size, stride=stride)
         self.unpool = torch.nn.MaxUnpool2d(kernel_size, stride=stride)
         if torch.cuda.is_available():
-            self.pool = self.pool.cuda()
-            self.unpool = self.unpool.cuda()
+            self.pool = self.pool.to(discover_device())
+            self.unpool = self.unpool.to(discover_device())
         self.init = True
 
         # self.pool = torch.nn.MaxPool2d(kernel_size, stride=stride, return_indices=True)
@@ -310,8 +309,8 @@ class MaxPool2d_b(nn.Module):
         self.pool = torch.nn.MaxPool2d(kernel_size, stride=stride, return_indices=True)
         self.unpool = torch.nn.MaxUnpool2d(kernel_size, stride=stride)
         if torch.cuda.is_available():
-            self.pool = self.pool.cuda()
-            self.unpool = self.unpool.cuda()
+            self.pool = self.pool.to(discover_device())
+            self.unpool = self.unpool.to(discover_device())
         self.init = True
 
         # self.pool = torch.nn.MaxPool2d(kernel_size, stride=stride, return_indices=True)
