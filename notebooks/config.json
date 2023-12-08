@@ -1,0 +1,41 @@
+{
+    "Params": {
+        "Num_Epoch": 100,
+        "Use_Tensorb": true,
+        "Save": true,
+        "Dico_Shape": [5, 5],
+        "Stride": [2, 1],
+        "v_size": [32, 64],
+        "Out_Padding": [1, 0],
+        "Image_Size": [28, 28],
+        "Batch_Size": 20,
+        "RGB": false
+    },
+    "Network": {
+        "Num_Layers": 2,
+        "Dictionary_Lr": [5e-2, 1e-1],
+        "Normalizer_Lr": [1e-3, 1e-3],
+        "Sparsity_Param": [0.20, 0.30],
+        "Feedback_Str": 4,
+        "Initial_Norm": [2, 2],
+        "Num_Features": [1, 32, 64]
+    },
+    "Transforms": {
+        "Use_Whitening": true,
+        "Use_LCN": true,
+        "Use_z_score": true,
+        "Use_Resize": false,
+        "Use_Mask": false,
+        "Whitening_Size": [28, 28],
+        "Whitening_f_0": 0.6,
+        "LCN_Kernel_Size": 3,
+        "LCN_Sigma": 0.5,
+        "LCN_RGB": false,
+        "Resize_Size": [96, 96],
+        "Mask_Size": [96, 96]
+    },
+    "Gaussian": {
+        "Use_Gaussian": true,
+        "Gaussian_Sigma": [30, 30]
+    }
+}
