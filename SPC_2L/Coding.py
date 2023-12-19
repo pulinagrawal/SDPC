@@ -544,7 +544,7 @@ def hard_ITML(x, k, non_neg=True):
 '''
 def get_eigenvalue(gamma_size, layers, max_it_eigen=50):
 
-    rdn_data = torch.randn((1,) + gamma_size[1:]).to(discover_device())
+    rdn_data = torch.randn((1,) + gamma_size[1:]).to(torch.discover_device())
 
     for idx in range(max_it_eigen):
 

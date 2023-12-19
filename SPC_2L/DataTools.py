@@ -161,7 +161,7 @@ class to_device(object):
     def __call__(self, img):
 
         img = img.float()
-        img = img.to(discover_device())
+        img = img.to(torch.discover_device())
 
         return img
 
@@ -192,7 +192,7 @@ class LCN(object):
             #self.gaussian_k = self.gaussian_k.expand(1,3,kernel_size,kernel_size)
         self.gaussian_k = self.gaussian_k / self.gaussian_k.sum()
         if torch.cuda.is_available():
-            self.gaussian_k=self.gaussian_k.to(discover_device())
+            self.gaussian_k=self.gaussian_k.to(torch.discover_device())
 
     def __call__(self, img):
         # subtractive step
@@ -234,7 +234,7 @@ class LCN(object):
             self.gaussian_k = self.gaussian_k.expand(
                 3, 3, kernel_size, kernel_size)
         self.gaussian_k = self.gaussian_k / self.gaussian_k.sum()
-        self.gaussian_k = self.gaussian_k.to(discover_device())
+        self.gaussian_k = self.gaussian_k.to(torch.discover_device())
 
     def __call__(self, img):
         # subtractive step
@@ -295,7 +295,7 @@ class whitening(object):
                                ).unsqueeze(0).expand(dim_x, dim_y).float()
         self.f = (f_x.pow(2) + f_y.pow(2)
                   ).sqrt().unsqueeze(0).unsqueeze(0).unsqueeze(-1)
-        self.f = self.f.to(discover_device())
+        self.f = self.f.to(torch.discover_device())
 
     def __call__(self, img):
 
@@ -331,7 +331,7 @@ class mask(object):
             np.linspace(-1, 1, dim_y)).unsqueeze(0).expand(dim_x, dim_y).float().unsqueeze(0)
         mask_y = 1 - y.abs().pow(n)
         self.mask = mask_x * mask_y
-        self.mask = self.mask.to(discover_device())
+        self.mask = self.mask.to(torch.discover_device())
 
     def __call__(self, img):
 
@@ -488,7 +488,7 @@ def gaussian_kernel(size, sigma=2):
     gaussian_kernel = gaussian_kernel.view(1, 1, size[-2], size[-1])
     gaussian_kernel = gaussian_kernel.repeat(size[0], size[1], 1, 1)
 
-    return gaussian_kernel.to(discover_device())
+    return gaussian_kernel.to(torch.discover_device())
 
 
 def to_img(x):
