@@ -40,7 +40,7 @@ class DataBase(object):
                 img_size = reshaped_size
 
             list_of_transforms.append(transforms.ToTensor())
-            list_of_transforms.append(to_cuda())
+            list_of_transforms.append(to_device())
 
             if do_LCN:
                 if LCN_params is not None:
@@ -151,7 +151,7 @@ def normalize_tensor_(tensor):
     return tensor.view(tensor_size)
 
 
-class to_cuda(object):
+class to_device(object):
 
     '''
     transform input to CUDA tensor before pre-processing
@@ -161,8 +161,7 @@ class to_cuda(object):
     def __call__(self, img):
 
         img = img.float()
-        if torch.cuda.is_available():
-            img = img.cuda()
+        img = img.to(torch.discover_device())
 
         return img
 
@@ -193,7 +192,7 @@ class LCN(object):
             #self.gaussian_k = self.gaussian_k.expand(1,3,kernel_size,kernel_size)
         self.gaussian_k = self.gaussian_k / self.gaussian_k.sum()
         if torch.cuda.is_available():
-            self.gaussian_k=self.gaussian_k.cuda()
+            self.gaussian_k=self.gaussian_k.to(torch.discover_device())
 
     def __call__(self, img):
         # subtractive step
@@ -235,8 +234,7 @@ class LCN(object):
             self.gaussian_k = self.gaussian_k.expand(
                 3, 3, kernel_size, kernel_size)
         self.gaussian_k = self.gaussian_k / self.gaussian_k.sum()
-        if torch.cuda.is_available():
-            self.gaussian_k = self.gaussian_k.cuda()
+        self.gaussian_k = self.gaussian_k.to(torch.discover_device())
 
     def __call__(self, img):
         # subtractive step
@@ -297,8 +295,7 @@ class whitening(object):
                                ).unsqueeze(0).expand(dim_x, dim_y).float()
         self.f = (f_x.pow(2) + f_y.pow(2)
                   ).sqrt().unsqueeze(0).unsqueeze(0).unsqueeze(-1)
-        if torch.cuda.is_available():
-            self.f = self.f.cuda()
+        self.f = self.f.to(torch.discover_device())
 
     def __call__(self, img):
 
@@ -334,8 +331,7 @@ class mask(object):
             np.linspace(-1, 1, dim_y)).unsqueeze(0).expand(dim_x, dim_y).float().unsqueeze(0)
         mask_y = 1 - y.abs().pow(n)
         self.mask = mask_x * mask_y
-        if torch.cuda.is_available():
-            self.mask = self.mask.cuda()
+        self.mask = self.mask.to(torch.discover_device())
 
     def __call__(self, img):
 
@@ -458,8 +454,7 @@ def ssim(img1, img2, window_size=11, size_average=True):
     (_, channel, _, _) = img1.size()
     window = create_window(window_size, channel)
 
-    if img1.is_cuda:
-        window = window.cuda(img1.get_device())
+    window = window.to(img1.get_device())
     window = window.type_as(img1)
 
     return _ssim(img1, img2, window, window_size, channel, size_average)
@@ -493,7 +488,7 @@ def gaussian_kernel(size, sigma=2):
     gaussian_kernel = gaussian_kernel.view(1, 1, size[-2], size[-1])
     gaussian_kernel = gaussian_kernel.repeat(size[0], size[1], 1, 1)
 
-    return gaussian_kernel.cuda()
+    return gaussian_kernel.to(torch.discover_device())
 
 
 def to_img(x):
