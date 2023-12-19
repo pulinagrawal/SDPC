@@ -242,11 +242,14 @@ class ML_Lasso(object):
 
     def F_v(self, X, gamma, i, kwargs_next={}, kwargs_previous={}):
 
+        # computes the prediction of the current layer using the current gamma for the backward pass
         pred = self.layers[i].backward(self.layers[i].v * gamma[i])
 
         if i == 0:
+            # computes the loss for the current layer using the prediction and the input data
             Loss = (X - pred).pow(2).sum().mul(self.layers[i].a / 2)
         else:
+            # computes the loss for the current layer using the prediction and the output of the previous layer
             Loss = (self.layers[i - 1].to_next(gamma[i - 1]) - pred).pow(2).sum().mul(self.layers[i].a / 2)
 
         gamma[i] = gamma[i].detach()
