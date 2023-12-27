@@ -60,7 +60,7 @@ class ML_FISTA(object):
 
         return gamma_z[i]
 
-    def coding(self, X, flag=None, gamma_in=None, softmax=False, labels=None):
+    def coding(self, X, flag=None, gamma_in=None, softmax=False, labels=None, do_feedback=True):
 
         gamma = [None] * self.network.nb_layers
         gamma_old = [None] * self.network.nb_layers
@@ -108,23 +108,23 @@ class ML_FISTA(object):
 
             for i in range(self.network.nb_layers):
 
-                if flag[i]:
+                if flag[i]: # Always set to True.
 
 
                     gamma_z[i].requires_grad = True
 
-                    Loss[i] = self.LF.F(X, gamma_z, i, labels=labels)
+                    Loss[i] = self.LF.F(X, gamma_z, i, do_feedback=do_feedback, labels=labels)
                     Loss[i].backward()
 
                     gamma_z[i].requires_grad = False
 
                     grad = gamma_z[i].grad
-                    if self.mode == 'line_search':
+                    if self.mode == 'line_search': # mode is 'eigen'
                         gamma[i] = self.line_search(X, gamma_z, grad, Loss[i], i)
-                    if softmax == True and i == (self.network.nb_layers -1):
+                    if softmax == True and i == (self.network.nb_layers -1):  # softmax is False
                         gamma[i] = self.LF.Soft(gamma_z[i], grad, self.etas[i], i)
                     else :
-                        gamma[i] = self.LF.prox_G(gamma_z[i], grad, self.etas[i], i)
+                        gamma[i] = self.LF.prox_G(gamma_z[i], grad, self.etas[i], i) # this is relu
 
                     gamma_z[i] = gamma[i] + (gamma[i] - gamma_old[i]).mul((t_old - 1) / t_new)
                     gamma_old[i] = gamma[i]

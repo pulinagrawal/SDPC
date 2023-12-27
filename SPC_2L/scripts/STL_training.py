@@ -4,6 +4,7 @@
 
 # %%
 
+from json import load
 import sys
 from pathlib import Path
 
@@ -44,7 +45,8 @@ b=1 #### Feedback strength parameter. b=0 --> Hila, b=1 --> 2L-SPC
 v_i=[10,10,10] #### Initial normalizer value [Layer1, Layer2]
 nb_epoch = 100 #### number of training epochs
 batch_size = 1024 #### batch size
-model_name_prefix = 'STL_3L_Wi_Feedback'
+model_name_prefix = 'STL_2L_Wi_Feedback'
+do_feedback = True
 
 Use_tb = True #### Use to activate tensorboard monitoring
 torch.discover_device = lambda: 'cuda:1'
@@ -77,15 +79,24 @@ def setup_dataset(split='train'):
     return DataBase, mask_g
 
 
-def setup_model():
-    layer = [LayerPC((64, 3, 8, 8), stride=2, b=b, v=v_i[0], v_size=64 ,out_pad=0),
-            LayerPC((128, 64, 8, 8), stride=1, b=b, v=v_i[1], v_size=128 ,out_pad=0),
-            LayerPC((128, 128, 8, 8), stride=1, b=b, v=v_i[1], v_size=128 ,out_pad=0),
-            ]
+def setup_model(load_model=None):
+    if load_model is not None:
+        with open(load_model, 'rb') as file:
+            output_exp = pickle.load(file)
+        Net = output_exp['Net']
+        Net.to_device(torch.discover_device())
+        Loss = output_exp['Loss']
+        Pursuit = output_exp['Pursuit']
+    else:
+        layer = [LayerPC((64, 3, 8, 8), stride=2, b=b, v=v_i[0], v_size=64 ,out_pad=0), 
+                #12288 params
+                LayerPC((128, 64, 8, 8), stride=1, b=b, v=v_i[1], v_size=128 ,out_pad=0),
+                # 524288 params
+                ]
 
-    Net = Network(layer, input_size=(batch_size, 3, 96,96))
-    Loss = ML_Lasso(Net, l)
-    Pursuit = ML_FISTA(Net, Loss, max_iter=1000, th=1e-4, mode='eigen')
+        Net = Network(layer, input_size=(batch_size, 3, 96,96))
+        Loss = ML_Lasso(Net, l)
+        Pursuit = ML_FISTA(Net, Loss, max_iter=1000, th=1e-4, mode='eigen')
 
     ## Optimizer initialization
     opt_dico = [None] * (Net.nb_layers + 1)
@@ -119,7 +130,7 @@ def train_STL_model(model, dataset, nb_epoch, Use_tb=True):
         for idx_batch, data in tqdm(enumerate(DataBase), desc='Batches', total=len(DataBase)):
 
             batch = data[0].to(torch.discover_device())#.cuda
-            gamma, it, Loss_G, delta = Pursuit.coding(batch)
+            gamma, it, Loss_G, delta = Pursuit.coding(batch, do_feedback=do_feedback)
 
 
             learn_net(Net, Loss, opt_dico, opt_v, mask_g, L, L_v, k, l2_loss, l1_loss, batch, gamma)
@@ -169,15 +180,15 @@ def test_STL_model(model, dataset, Use_tb=True):
 
     k = -1 * len(DataBase)
 
-    l2_loss = torch.zeros(Net.nb_layers, len(DataBase))
-    l1_loss = torch.zeros(Net.nb_layers, len(DataBase))
+    l2_loss = torch.zeros(Net.nb_layers, nb_epoch * len(DataBase))
+    l1_loss = torch.zeros(Net.nb_layers, nb_epoch * len(DataBase))
     for idx_batch, data in tqdm(enumerate(DataBase), desc='Batches', total=len(DataBase)):
 
         batch = data[0].to(torch.discover_device())#.cuda
         gamma, it, Loss_G, delta = Pursuit.coding(batch)
 
 
-        learn_net(Net, Loss, opt_dico, opt_v, mask_g, L, L_v, k, l2_loss, l1_loss, batch, gamma, learn=False)
+        learn_net(Net, Loss, opt_dico, opt_v, mask_g, L, L_v, k, l2_loss, l1_loss, batch, gamma)
 
         if Use_tb:
                 writer.add_scalar('FISTA_iterations', it, k)
@@ -200,7 +211,7 @@ def test_STL_model(model, dataset, Use_tb=True):
 def learn_net(Net, Loss, opt_dico, opt_v, mask_g, L, L_v, k, l2_loss, l1_loss, batch, gamma, learn=True):
     for i in range(Net.nb_layers):
         Net.layers[i].dico.requires_grad = True
-        L[i] = Loss.F(batch, gamma, i, do_feedback=True).div(batch.size()[0])  ## Unsupervised
+        L[i] = Loss.F(batch, gamma, i, do_feedback=do_feedback).div(batch.size()[0])  ## Unsupervised
         if learn:
             L[i].backward()
         Net.layers[i].dico.requires_grad = False
@@ -210,7 +221,7 @@ def learn_net(Net, Loss, opt_dico, opt_v, mask_g, L, L_v, k, l2_loss, l1_loss, b
         ##Mask
         Net.layers[i].dico*=mask_g[i]
         Net.layers[i].dico/=norm(Net.layers[i].dico)
-        
+
         l2_loss[i,k]= L[i].detach() 
         l1_loss[i,k] =  gamma[i].detach().sum().div(gamma[i].size(0))
         
@@ -226,7 +237,12 @@ def learn_net(Net, Loss, opt_dico, opt_v, mask_g, L, L_v, k, l2_loss, l1_loss, b
 
 if __name__ == '__main__':
     train_dataset = setup_dataset()
-    model = setup_model()
-    train_STL_model(model, train_dataset, nb_epoch, Use_tb=True)
+    load_model = "Savings\\STL_2L_Wi_Feedback[0.4,1.6]_b=1.pkl"
+    model = setup_model(load_model)
+    if load_model is None:
+        train_STL_model(model, train_dataset, nb_epoch, Use_tb=True)
+    if load_model is not None:
+        model_name_prefix = load_model.split('\\')[-1].split('.')[0].split('[')[0]
+    model_name_prefix = 'test_' + model_name_prefix
     test_dataset = setup_dataset(split='test')
     test_STL_model(model, test_dataset, Use_tb=True)

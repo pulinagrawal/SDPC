@@ -149,7 +149,10 @@ class Network(object):
             if verbose:
                 print(network_structure)
 
-        self.layers = [self.layers[i].to(torch.discover_device()) for i in range(self.nb_layers)]
+            self.to_device(torch.discover_device())
+        
+    def to_device(self, device):
+        self.layers = [self.layers[i].to(device) for i in range(self.nb_layers)]
 
     def project_dico(self, j, cpu=False):
         """
