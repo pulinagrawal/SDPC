@@ -5,6 +5,7 @@
 # %%
 
 from json import load
+from re import A
 import sys
 from pathlib import Path
 
@@ -45,11 +46,11 @@ b=1 #### Feedback strength parameter. b=0 --> Hila, b=1 --> 2L-SPC
 v_i=[10,10,10] #### Initial normalizer value [Layer1, Layer2]
 nb_epoch = 100 #### number of training epochs
 batch_size = 1024 #### batch size
-model_name_prefix = 'STL_2L_Wi_Feedback'
+model_name_prefix = 'kfold_wi_feedback_test'
 do_feedback = True
 
 Use_tb = True #### Use to activate tensorboard monitoring
-torch.discover_device = lambda: 'cuda:1'
+torch.discover_device = lambda: 'cuda:2'
 
 ## Database 
 data_path = 'data/STL/stl10_binary/'
@@ -74,7 +75,6 @@ def setup_dataset(split='train'):
     ## Gaussian masks for the dictionaries
     mask_g = [gaussian_kernel((64,3,8,8), sigma=30),
               gaussian_kernel((128,64,8,8), sigma=30),
-              gaussian_kernel((128,128,8,8), sigma=30)
               ]
     return DataBase, mask_g
 
@@ -171,6 +171,8 @@ def test_STL_model(model, dataset, Use_tb=True):
     L = [None] * (Net.nb_layers)
     L_v = [None] * (Net.nb_layers)
     reco = [None] * (Net.nb_layers)
+    aggregate_L_v = 0
+    L_v_layer = 1
 
     model_name = f'{model_name_prefix}[{l[0]},{l[1]}]_b={b}'
     if Use_tb : 
@@ -189,6 +191,7 @@ def test_STL_model(model, dataset, Use_tb=True):
 
 
         learn_net(Net, Loss, opt_dico, opt_v, mask_g, L, L_v, k, l2_loss, l1_loss, batch, gamma)
+        aggregate_L_v += L_v[L_v_layer].detach().cpu().numpy()
 
         if Use_tb:
                 writer.add_scalar('FISTA_iterations', it, k)
@@ -207,6 +210,8 @@ def test_STL_model(model, dataset, Use_tb=True):
                     writer.add_image('Reco/L{0}'.format(i), reco_image, k)
 
         k += 1
+
+    return aggregate_L_v / len(DataBase)
 
 def learn_net(Net, Loss, opt_dico, opt_v, mask_g, L, L_v, k, l2_loss, l1_loss, batch, gamma, learn=True):
     for i in range(Net.nb_layers):
