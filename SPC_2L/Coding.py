@@ -139,6 +139,7 @@ class ML_FISTA(object):
 
             delta = [(Loss[i] - Loss_old[i]).detach().abs() / Loss_old[i] for i in range(self.network.nb_layers)]
 
+            # if the change in the loss is small enough, stop the algorithm
             condition = True
             for i in range(self.network.nb_layers):
                 condition = condition and (delta[i] < self.th).all()
@@ -259,7 +260,8 @@ class ML_Lasso(object):
         return self.lambdas[i]*gamma.abs().sum()
 
     def prox_G(self, gamma, grad, eta, i):
-        return f.relu(gamma - eta * grad - eta * self.lambdas[i])
+        x = gamma - eta * grad - eta * self.lambdas[i]
+        return f.relu(f.tanh(10*x))
 
     def Soft(self, gamma, grad, eta, i):
         return f.softmax(gamma - eta*grad, dim=1)

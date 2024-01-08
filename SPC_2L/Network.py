@@ -38,6 +38,8 @@ class LayerPC(nn.Module):
         else:
             self.bias = 0
 
+        # v is a scaling factor per filter (i.e., per channel) not per unit/neuron 
+            # evidenced by 1,v_size,1,1
         self.v_size = v_size
         if self.v_size is None:
             self.v = v
@@ -67,7 +69,7 @@ class LayerPC(nn.Module):
             else:
                 dico = torch.randn(self.dico_shape)
                 if self.normalize_dico:
-                    dico /= norm(dico)
+                    dico /= norm(dico) # l2 norm makes it all positive
                 else:
                     dico *= np.sqrt(2/(self.dico_shape[-1]*self.dico_shape[-2]*self.dico_shape[-3]))
                 return nn.Parameter(dico)

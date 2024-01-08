@@ -45,8 +45,8 @@ l = [0.4,1.6,2.56]#### Sparsity parameters [Layer1, Layer2]
 b=1 #### Feedback strength parameter. b=0 --> Hila, b=1 --> 2L-SPC
 v_i=[10,10,10] #### Initial normalizer value [Layer1, Layer2]
 nb_epoch = 100 #### number of training epochs
-batch_size = 1024 #### batch size
-model_name_prefix = 'kfold_wi_feedback_test'
+batch_size = 64 #### batch size
+model_name_prefix = 'tanh_10x'
 do_feedback = True
 
 Use_tb = True #### Use to activate tensorboard monitoring
@@ -88,9 +88,9 @@ def setup_model(load_model=None):
         Loss = output_exp['Loss']
         Pursuit = output_exp['Pursuit']
     else:
-        layer = [LayerPC((64, 3, 8, 8), stride=2, b=b, v=v_i[0], v_size=64 ,out_pad=0), 
+        layer = [LayerPC((64, 3, 8, 8), stride=2, b=b, v=v_i[0], v_size=64,out_pad=0), 
                 #12288 params
-                LayerPC((128, 64, 8, 8), stride=1, b=b, v=v_i[1], v_size=128 ,out_pad=0),
+                LayerPC((128, 640, 8, 8), stride=1, b=b, v=v_i[1], v_size=128,out_pad=0),
                 # 524288 params
                 ]
 
@@ -243,6 +243,7 @@ def learn_net(Net, Loss, opt_dico, opt_v, mask_g, L, L_v, k, l2_loss, l1_loss, b
 if __name__ == '__main__':
     train_dataset = setup_dataset()
     load_model = "Savings\\STL_2L_Wi_Feedback[0.4,1.6]_b=1.pkl"
+    load_model = None
     model = setup_model(load_model)
     if load_model is None:
         train_STL_model(model, train_dataset, nb_epoch, Use_tb=True)
