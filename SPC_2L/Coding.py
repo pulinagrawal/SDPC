@@ -261,7 +261,14 @@ class ML_Lasso(object):
 
     def prox_G(self, gamma, grad, eta, i):
         x = gamma - eta * grad - eta * self.lambdas[i]
-        return f.relu(f.tanh(10*x))
+        # fun and df combined implements 
+        # ++++---------
+        # ----+++++++++
+        # 0   1   2   3 (x-axis)
+        fun = lambda i: (i-1)//(i+1)
+        df = lambda i, x, y: x*fun(i)**2+y*(fun(i)+1)
+        return f.relu(df(i, x, f.tanh(10*x)))
+        
 
     def Soft(self, gamma, grad, eta, i):
         return f.softmax(gamma - eta*grad, dim=1)
